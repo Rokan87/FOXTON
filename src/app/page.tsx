@@ -1,7 +1,7 @@
 "use client";
 
 import WebApp from "@twa-dev/sdk";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface userData {
   id: number;
@@ -10,23 +10,34 @@ interface userData {
   username?: string;
   language_code?: string;
   is_premium?: boolean;
+  photo_url?: string; // Añadimos el campo para la URL de la foto
 }
 
 export default function Home() {
-  const [userData, setUserData] = useState<userData | null>(null);  
+  const [userData, setUserData] = useState<userData | null>(null);
 
   useEffect(() => {
     if (WebApp.initDataUnsafe.user) {
       setUserData(WebApp.initDataUnsafe.user as userData);
     }
-  } , []);
+  }, []);
+
   return (
     <main>
       {userData ? (
         <div>
           <h1>Welcome, {userData.first_name}!</h1>
+          {userData.photo_url && (
+            <img
+              src={userData.photo_url}
+              alt={`${userData.first_name}'s profile`}
+              style={{ width: "150px", height: "150px", borderRadius: "50%" }} // Estilo para mostrar la imagen circular
+            />
+          )}
           <p>
-            {userData.is_premium ? "You're a premium user!" : "You're not a premium user."}
+            {userData.is_premium
+              ? "You're a premium user!"
+              : "You're not a premium user."}
           </p>
         </div>
       ) : (
