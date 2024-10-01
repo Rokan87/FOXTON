@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import WebApp from "@twa-dev/sdk";
@@ -106,12 +104,19 @@ export default function Home() {
     }
   }, []);
 
-  const copyReferralLink = () => {
+  const copyReferralLink = async () => {
     if (userData?.referralCode) {
-      const referralLink = `${window.location.origin}?referrer=${userData.referralCode}`;
-      navigator.clipboard.writeText(referralLink).then(() => {
-        alert("Referral link copied to clipboard!");
-      });
+      const userRef = doc(db, "users", userData.id.toString());
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const user = userDoc.data() as UserData;
+        const botUsername = "@mytestingsambot"; // Reemplaza con el nombre de usuario de tu bot de Telegram
+        const referralLink = `https://t.me/${botUsername}?start=${user.referralCode}`;
+        navigator.clipboard.writeText(referralLink).then(() => {
+          alert("¡Enlace de referido copiado al portapapeles!");
+        });
+      }
     }
   };
 
@@ -129,12 +134,12 @@ export default function Home() {
               ? "You're a premium user!"
               : "You're not a premium user."}
           </p>
-          <p>Points: {userData.points}</p>
-          <p>Referrals: {userData.referrals}</p>
-          <button onClick={copyReferralLink}>Copy Referral Link</button>
+          <p>Puntos: {userData.points}</p>
+          <p>Referidos: {userData.referrals}</p>
+          <button onClick={copyReferralLink}>Copiar enlace de referido</button>
         </div>
       ) : (
-        <p>Loading...</p>
+        <p>Cargando...</p>
       )}
     </main>
   );
