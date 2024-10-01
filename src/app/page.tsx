@@ -24,7 +24,9 @@ export default function Home() {
     <main>
       {userData ? (
         <div>
-          <h1>Welcome, {userData.first_name}!</h1>
+          <h1>Welcome to GeTon
+          <p>the place where you learn to earn</p>
+          {userData.first_name}!</h1>
           <p>
             {userData.is_premium ? "You're a premium user!" : "You're not a premium user."}
           </p>
