@@ -1,4 +1,3 @@
-
 "use client";
 
 import WebApp from "@twa-dev/sdk";
@@ -46,7 +45,14 @@ export default function Home() {
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      const referralCode = uuidv4().slice(0, 8); // Generar un código de referencia único
+      let referralCode;
+
+      // Generar un código de referencia único
+      do {
+        referralCode = uuidv4().slice(0, 8);
+        const existingDoc = await getDoc(doc(db, "users", referralCode));
+        if (!existingDoc.exists()) break; // Si no existe, salimos del bucle
+      } while (true);
 
       // Crear los datos adicionales
       const userDataToSave = {
@@ -72,7 +78,7 @@ export default function Home() {
         if (referrerDoc.exists()) {
           const referrerData = referrerDoc.data() as UserData;
           await updateDoc(referrerQuery, {
-            friends: arrayUnion(user.username),
+            friends: arrayUnion(user.username || ""),
             points: increment(100),
             referrals: increment(1)
           });
@@ -88,41 +94,27 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const fetchUserData = async (userId: number) => {
+      const userRef = doc(db, "users", userId.toString());
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        setUserData(userDoc.data() as UserData);
+      }
+    };
+
     const fetchData = async () => {
-      const fetchUserData = async (userId: number) => {
-        const userRef = doc(db, "users", userId.toString());
-        const userDoc = await getDoc(userRef);
+      try {
+        if (WebApp.initDataUnsafe.user) {
+          const user = WebApp.initDataUnsafe.user as UserData;
+          setUserData(user);
 
-        if (userDoc.exists()) {
-          setUserData(userDoc.data() as UserData);
+          // Esperar a que se guarde el usuario antes de obtener sus datos
+          await saveUserToFirestore(user);
+          await fetchUserData(user.id);
         }
-      };
-
-      if (WebApp.initDataUnsafe.user) {
-        const user = WebApp.initDataUnsafe.user as UserData;
-        setUserData(user);
-        saveUserToFirestore(user); // Guardar datos del usuario en Firestore
-        fetchUserData(user.id); // Obtener datos del usuario desde Firestore
-
-        // Verificar si el usuario se registró mediante un enlace de referido
-        const urlParams = new URLSearchParams(window.location.search);
-        const referrerCode = urlParams.get('start');
-        if (referrerCode) {
-          const referrerQuery = doc(db, "users", referrerCode);
-          const referrerDoc = await getDoc(referrerQuery);
-          if (referrerDoc.exists()) {
-            const referrerData = referrerDoc.data() as UserData;
-            await updateDoc(referrerQuery, {
-              friends: arrayUnion(user.username),
-              points: increment(100),
-              referrals: increment(1)
-            });
-            await updateDoc(userRef, {
-              points: increment(100)
-            });
-            console.log("Datos del referente actualizados:", referrerData);
-          }
-        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
       }
     };
 
@@ -138,9 +130,8 @@ export default function Home() {
         const user = userDoc.data() as UserData;
         const appUrl = window.location.origin; // URL de la aplicación
         const referralLink = `${appUrl}?start=${user.referralCode}`;
-        navigator.clipboard.writeText(referralLink).then(() => {
-          alert("¡Enlace de referido copiado al portapapeles!");
-        });
+        await navigator.clipboard.writeText(referralLink);
+        alert("¡Enlace de referido copiado al portapapeles!");
       }
     }
   };
