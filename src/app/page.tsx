@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import WebApp from "@twa-dev/sdk";
 import { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid"; // Para generar el código de referido único
 
 // Configuración de Firebase
@@ -62,6 +63,26 @@ export default function Home() {
       // Guardar en Firestore
       await setDoc(userRef, userDataToSave);
       console.log("Usuario guardado en Firestore:", userDataToSave);
+
+      // Verificar si el usuario se registró mediante un enlace de referido
+      const urlParams = new URLSearchParams(window.location.search);
+      const referrerCode = urlParams.get('referrer');
+      if (referrerCode) {
+        const referrerQuery = doc(db, "users", referrerCode);
+        const referrerDoc = await getDoc(referrerQuery);
+        if (referrerDoc.exists()) {
+          const referrerData = referrerDoc.data() as UserData;
+          await updateDoc(referrerQuery, {
+            friends: arrayUnion(user.username),
+            points: increment(100),
+            referrals: increment(1)
+          });
+          await updateDoc(userRef, {
+            points: increment(100)
+          });
+          console.log("Datos del referente actualizados:", referrerData);
+        }
+      }
     } else {
       console.log("El usuario ya existe en Firestore");
     }
@@ -85,6 +106,15 @@ export default function Home() {
     }
   }, []);
 
+  const copyReferralLink = () => {
+    if (userData?.referralCode) {
+      const referralLink = `${window.location.origin}?referrer=${userData.referralCode}`;
+      navigator.clipboard.writeText(referralLink).then(() => {
+        alert("Referral link copied to clipboard!");
+      });
+    }
+  };
+
   return (
     <main>
       {userData ? (
@@ -101,6 +131,7 @@ export default function Home() {
           </p>
           <p>Points: {userData.points}</p>
           <p>Referrals: {userData.referrals}</p>
+          <button onClick={copyReferralLink}>Copy Referral Link</button>
         </div>
       ) : (
         <p>Loading...</p>
