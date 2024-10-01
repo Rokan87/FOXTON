@@ -1,3 +1,4 @@
+
 "use client";
 
 import WebApp from "@twa-dev/sdk";
@@ -96,37 +97,32 @@ export default function Home() {
       }
     };
 
-    const initializeUser = async () => {
-      if (WebApp.initDataUnsafe.user) {
-        const user = WebApp.initDataUnsafe.user as UserData;
-        setUserData(user);
-        await saveUserToFirestore(user); // Guardar datos del usuario en Firestore
-        const userRef = doc(db, "users", user.id.toString());
-        await fetchUserData(user.id); // Obtener datos del usuario desde Firestore
+    if (WebApp.initDataUnsafe.user) {
+      const user = WebApp.initDataUnsafe.user as UserData;
+      setUserData(user);
+      saveUserToFirestore(user); // Guardar datos del usuario en Firestore
+      fetchUserData(user.id); // Obtener datos del usuario desde Firestore
 
-        // Verificar si el usuario se registró mediante un enlace de referido
-        const urlParams = new URLSearchParams(window.location.search);
-        const referrerCode = urlParams.get('start');
-        if (referrerCode) {
-          const referrerQuery = doc(db, "users", referrerCode);
-          const referrerDoc = await getDoc(referrerQuery);
-          if (referrerDoc.exists()) {
-            const referrerData = referrerDoc.data() as UserData;
-            await updateDoc(referrerQuery, {
-              friends: arrayUnion(user.username),
-              points: increment(100),
-              referrals: increment(1)
-            });
-            await updateDoc(userRef, {
-              points: increment(100)
-            });
-            console.log("Datos del referente actualizados:", referrerData);
-          }
+      // Verificar si el usuario se registró mediante un enlace de referido
+      const urlParams = new URLSearchParams(window.location.search);
+      const referrerCode = urlParams.get('start');
+      if (referrerCode) {
+        const referrerQuery = doc(db, "users", referrerCode);
+        const referrerDoc = await getDoc(referrerQuery);
+        if (referrerDoc.exists()) {
+          const referrerData = referrerDoc.data() as UserData;
+          await updateDoc(referrerQuery, {
+            friends: arrayUnion(user.username),
+            points: increment(100),
+            referrals: increment(1)
+          });
+          await updateDoc(userRef, {
+            points: increment(100)
+          });
+          console.log("Datos del referente actualizados:", referrerData);
         }
       }
-    };
-
-    initializeUser();
+    }
   }, []);
 
   const copyReferralLink = async () => {
@@ -136,8 +132,8 @@ export default function Home() {
 
       if (userDoc.exists()) {
         const user = userDoc.data() as UserData;
-        const botUsername = "mytestingsambot"; // Reemplaza con el nombre de usuario de tu bot de Telegram
-        const referralLink = `https://t.me/${botUsername}?start=${user.referralCode}`;
+        const appUrl = window.location.origin; // URL de la aplicación
+        const referralLink = `${appUrl}?start=${user.referralCode}`;
         navigator.clipboard.writeText(referralLink).then(() => {
           alert("¡Enlace de referido copiado al portapapeles!");
         });
