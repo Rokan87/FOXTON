@@ -111,7 +111,7 @@ export default function Home() {
 
       if (userDoc.exists()) {
         const user = userDoc.data() as UserData;
-        const botUsername = "@mytestingsambot"; // Reemplaza con el nombre de usuario de tu bot de Telegram
+        const botUsername = "mytestingsambot"; // Reemplaza con el nombre de usuario de tu bot de Telegram
         const referralLink = `https://t.me/${botUsername}?start=${user.referralCode}`;
         navigator.clipboard.writeText(referralLink).then(() => {
           alert("¡Enlace de referido copiado al portapapeles!");
