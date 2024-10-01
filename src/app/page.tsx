@@ -1,3 +1,4 @@
+
 "use client";
 
 import WebApp from "@twa-dev/sdk";
@@ -32,6 +33,8 @@ interface UserData {
   verified?: boolean;
   friends?: string[];
   referralCode?: string;
+  points?: number; // Añadir puntos
+  referrals?: number; // Añadir referidos
 }
 
 export default function Home() {
@@ -52,6 +55,8 @@ export default function Home() {
         verified: false, // No verificado al principio
         friends: [], // Lista vacía de amigos
         referralCode, // Código de referido único
+        points: 0, // Inicialmente los puntos son 0
+        referrals: 0, // Inicialmente los referidos son 0
       };
 
       // Guardar en Firestore
@@ -63,10 +68,20 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const fetchUserData = async (userId: number) => {
+      const userRef = doc(db, "users", userId.toString());
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        setUserData(userDoc.data() as UserData);
+      }
+    };
+
     if (WebApp.initDataUnsafe.user) {
       const user = WebApp.initDataUnsafe.user as UserData;
       setUserData(user);
       saveUserToFirestore(user); // Guardar datos del usuario en Firestore
+      fetchUserData(user.id); // Obtener datos del usuario desde Firestore
     }
   }, []);
 
@@ -84,6 +99,8 @@ export default function Home() {
               ? "You're a premium user!"
               : "You're not a premium user."}
           </p>
+          <p>Points: {userData.points}</p>
+          <p>Referrals: {userData.referrals}</p>
         </div>
       ) : (
         <p>Loading...</p>
