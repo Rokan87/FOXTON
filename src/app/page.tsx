@@ -44,8 +44,8 @@ export default function Home() {
     }
 
     const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
-      if (wallet) {
-        handleWalletConnection(wallet.address);
+      if (wallet && 'address' in wallet) {
+        handleWalletConnection((wallet as { address: string }).address);
       } else {
         handleWalletDisconnection();
       }
