@@ -27,6 +27,7 @@ interface UserData {
   referralCode: string;
   points: number;
   invitedUsers: string[];
+  invitedUsersCount: number; // Nuevo campo
   verifiedWallete: boolean;
   walletAddress: string;
   tasksDone: string[];
@@ -47,6 +48,7 @@ export default function Home() {
         referralCode: referralCode,
         points: 0,
         invitedUsers: [],
+        invitedUsersCount: 0, // Inicializar el conteo de usuarios invitados
         verifiedWallete: false,
         walletAddress: '',
         tasksDone: []
@@ -111,11 +113,7 @@ export default function Home() {
               : "No eres un usuario premium."}
           </p>
           <p>Puntos: {userData.points}</p>
-          <p>
-            Usuarios Invitados: {userData.invitedUsers.length > 0 
-              ? userData.invitedUsers.length 
-              : "Aún no has invitado a nadie"}
-          </p>
+          <p>Usuarios Invitados: {userData.invitedUsersCount}</p> {/* Mostrar el conteo de usuarios invitados */}
 
           {/* Botón para invitar a amigos */}
           <button onClick={inviteFriends}>Invitar a amigos</button>
