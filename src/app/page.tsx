@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import WebApp from "@twa-dev/sdk";
 import { UserData, saveOrUpdateUserInFirestore, fetchUserData } from "@/app/components/userService";
-import Wallet from '@/app/components/Wallet'; // Importa el componente de la billetera
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -55,7 +54,6 @@ export default function Home() {
           <p>Usuarios Invitados: {userData.invitedUsersCount}</p>
 
           <button onClick={inviteFriends}>Invitar a amigos</button>
-          <Wallet />
         </div>
       ) : (
         <p>Cargando....</p>
