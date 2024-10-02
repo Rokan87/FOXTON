@@ -55,9 +55,7 @@ export default function Home() {
           <p>Usuarios Invitados: {userData.invitedUsersCount}</p>
 
           <button onClick={inviteFriends}>Invitar a amigos</button>
-
-          {/* Componente de la billetera */}
-          <Wallet /> {/* Añadir el componente Wallet para las funcionalidades de la billetera */}
+          <Wallet />
         </div>
       ) : (
         <p>Cargando....</p>
