@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from "react";
 import WebApp from "@twa-dev/sdk";
+import TonWeb from "tonweb";
+import TonConnectUI from "@tonconnect/ui";
 import { UserData, saveOrUpdateUserInFirestore, fetchUserData } from "@/app/components/userService";
 
 export default function Home() {
@@ -15,6 +17,18 @@ export default function Home() {
       const message = `Hey! Te invito a aprender sobre la blockchain y cobrar por aprender: ${referralLink}`;
 
       window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
+    }
+  };
+
+  // Función para conectarse a la billetera de Telegram
+  const connectWallet = async () => {
+    try {
+      const tonConnectUI = TonConnectUI;
+      const connector = new tonConnectUI.TonConnect();
+      connector.connect({ jsBridgeKey: 'your-js-bridge-key' });
+      console.log("Conectado a la billetera de Telegram");
+    } catch (error) {
+      console.error("Error al conectar a la billetera:", error);
     }
   };
 
@@ -54,6 +68,7 @@ export default function Home() {
           <p>Usuarios Invitados: {userData.invitedUsersCount}</p>
 
           <button onClick={inviteFriends}>Invitar a amigos</button>
+          <button onClick={connectWallet}>Conectar Billetera</button>
         </div>
       ) : (
         <p>Cargando....</p>
