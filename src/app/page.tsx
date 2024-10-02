@@ -34,6 +34,7 @@ interface UserData {
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [referralCount, setReferralCount] = useState<number>(0);
 
   // Función para guardar o actualizar el usuario en Firestore
   const saveOrUpdateUserInFirestore = async (user: UserData, referralCode: string) => {
@@ -66,7 +67,12 @@ export default function Home() {
       const userDoc = await getDoc(userRef);
 
       if (userDoc.exists()) {
-        setUserData(userDoc.data() as UserData);
+        const userDataFromDB = userDoc.data() as UserData;
+        setUserData(userDataFromDB);
+
+        // Calcular el número de referidos (usuarios invitados)
+        const numReferrals = userDataFromDB.invitedUsers ? userDataFromDB.invitedUsers.length : 0;
+        setReferralCount(numReferrals);
       }
     };
 
@@ -102,6 +108,7 @@ export default function Home() {
               : "No eres un usuario premium."}
           </p>
           <p>Puntos: {userData.points}</p>
+          <p>Referidos: {referralCount}</p> {/* Mostrar número de referidos */}
         </div>
       ) : (
         <p>Cargando....</p>
