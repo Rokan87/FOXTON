@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Script from "next/script";
+import { TonConnectUIProvider } from "@tonconnect/ui-react";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,7 +31,9 @@ export default function RootLayout({
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <TonConnectUIProvider manifestUrl="https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json">
         {children}
+        </TonConnectUIProvider>
       </body>
     </html>
   );
