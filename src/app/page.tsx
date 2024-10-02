@@ -8,12 +8,14 @@ import { UserData, saveOrUpdateUserInFirestore, fetchUserData } from "@/app/comp
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);  // Estado para almacenar la dirección de la billetera conectada
 
   // Función para generar y compartir el enlace de referido
   const inviteFriends = () => {
     if (userData?.referralCode) {
       const referralLink = `https://t.me/mytestingsambot?start=${userData.referralCode}`;
       const message = `Hey! Te invito a aprender sobre la blockchain y cobrar por aprender: ${referralLink}`;
+
       window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
     }
   };
@@ -24,23 +26,30 @@ export default function Home() {
       const tonConnectUI = new TonConnectUI({
         manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
       });
-
       const connection = await tonConnectUI.connectWallet();
-      const walletAddress = connection.account.address;
+      const connectedWalletAddress = connection.account.address;
 
-      // Guardar la dirección de la billetera en la base de datos
-      if (userData) {
-        const updatedUserData = { ...userData, walletAddress };
-        await saveOrUpdateUserInFirestore(updatedUserData, userData.referralCode);
+      // Mostrar la dirección de la billetera conectada
+      setWalletAddress(connectedWalletAddress);
 
-        // Vuelve a obtener los datos actualizados de Firestore
-        const userDataFromFirestore = await fetchUserData(userData.id);
-        setUserData(userDataFromFirestore);  // Actualiza el estado local con los datos desde Firestore
-      }
-
-      console.log("Conectado a la billetera de Telegram:", walletAddress);
+      console.log("Conectado a la billetera de Telegram:", connectedWalletAddress);
     } catch (error) {
       console.error("Error al conectar a la billetera:", error);
+    }
+  };
+
+  // Función para desconectar la billetera
+  const disconnectWallet = async () => {
+    try {
+      const tonConnectUI = new TonConnectUI({
+        manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
+      });
+
+      await tonConnectUI.disconnect();
+      setWalletAddress(null);  // Limpiar el estado de la dirección de la billetera
+      console.log("Billetera desconectada.");
+    } catch (error) {
+      console.error("Error al desconectar la billetera:", error);
     }
   };
 
@@ -49,16 +58,12 @@ export default function Home() {
       try {
         if (WebApp.initDataUnsafe.user) {
           const user = WebApp.initDataUnsafe.user as unknown as UserData;
-          console.log("User data from Telegram:", user);
           const referralCode = "defaultReferralCode";  // Usa un código de referido predeterminado
           setUserData(user);
 
-          // Guarda o actualiza el usuario en Firestore
           await saveOrUpdateUserInFirestore(user, referralCode);
-
-          // Obtén los datos del usuario actualizados desde Firestore
           const userDataFromFirestore = await fetchUserData(user.id);
-          setUserData(userDataFromFirestore);  // Actualiza el estado local con los datos del usuario desde Firestore
+          setUserData(userDataFromFirestore);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -83,14 +88,19 @@ export default function Home() {
           <p>Puntos: {userData.points}</p>
           <p>Usuarios Invitados: {userData.invitedUsersCount}</p>
 
-          {/* Botón para invitar amigos */}
           <button onClick={inviteFriends}>Invitar a amigos</button>
 
-          {/* Mostrar dirección de la billetera o botón para conectar */}
-          {userData.walletAddress ? (
-            <p>Dirección de la billetera: {userData.walletAddress}</p>
-          ) : (
-            <button onClick={connectWallet}>Conectar Billetera</button>
+          {/* Mostrar siempre el botón para conectar la billetera */}
+          <button onClick={connectWallet}>
+            {walletAddress ? "Conectar otra billetera" : "Conectar Billetera"}
+          </button>
+
+          {/* Mostrar la dirección de la billetera conectada, si existe */}
+          {walletAddress && (
+            <div>
+              <p>Dirección de la billetera: {walletAddress}</p>
+              <button onClick={disconnectWallet}>Desconectar Billetera</button>
+            </div>
           )}
         </div>
       ) : (
