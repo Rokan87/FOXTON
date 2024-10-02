@@ -112,6 +112,9 @@ export default function Home() {
           </p>
           <p>Puntos: {userData.points}</p>
 
+          {/* Mostrar la cuenta de usuarios invitados */}
+          <p>Usuarios invitados: {userData.invitedUsers.length}</p>
+
           {/* Botón para invitar a amigos */}
           <button onClick={inviteFriends}>Invitar a amigos</button>
         </div>
