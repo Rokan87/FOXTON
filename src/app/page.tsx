@@ -1,55 +1,67 @@
 // Home.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import WebApp from "@twa-dev/sdk";
 import { TonConnectUI } from "@tonconnect/ui";
 import { UserData, saveOrUpdateUserInFirestore, fetchUserData } from "@/app/components/userService";
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);  // Estado para almacenar la dirección de la billetera conectada
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  const tonConnectUI = new TonConnectUI({
+    manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
+  });
+
+  // Manejar la conexión de la billetera
+  const handleWalletConnection = useCallback((address: string) => {
+    setWalletAddress(address);
+    console.log("Conectado a la billetera:", address);
+  }, []);
+
+  // Manejar la desconexión de la billetera
+  const handleWalletDisconnection = useCallback(() => {
+    setWalletAddress(null);
+    console.log("Billetera desconectada");
+  }, []);
+
+  // Función para abrir la conexión o desconectar la billetera
+  const handleWalletAction = async () => {
+    if (walletAddress) {
+      await tonConnectUI.disconnect();
+      handleWalletDisconnection();
+    } else {
+      const connection = await tonConnectUI.connectWallet();
+      handleWalletConnection(connection.account.address);
+    }
+  };
+
+  useEffect(() => {
+    // Verificar si la billetera está conectada
+    if (tonConnectUI.account?.address) {
+      handleWalletConnection(tonConnectUI.account.address);
+    }
+
+    const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
+      if (wallet) {
+        handleWalletConnection(wallet.address);
+      } else {
+        handleWalletDisconnection();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [tonConnectUI, handleWalletConnection, handleWalletDisconnection]);
 
   // Función para generar y compartir el enlace de referido
   const inviteFriends = () => {
     if (userData?.referralCode) {
       const referralLink = `https://t.me/mytestingsambot?start=${userData.referralCode}`;
       const message = `Hey! Te invito a aprender sobre la blockchain y cobrar por aprender: ${referralLink}`;
-
       window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
-    }
-  };
-
-  // Función para conectarse a la billetera de Telegram
-  const connectWallet = async () => {
-    try {
-      const tonConnectUI = new TonConnectUI({
-        manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
-      });
-      const connection = await tonConnectUI.connectWallet();
-      const connectedWalletAddress = connection.account.address;
-
-      // Mostrar la dirección de la billetera conectada
-      setWalletAddress(connectedWalletAddress);
-
-      console.log("Conectado a la billetera de Telegram:", connectedWalletAddress);
-    } catch (error) {
-      console.error("Error al conectar a la billetera:", error);
-    }
-  };
-
-  // Función para desconectar la billetera
-  const disconnectWallet = async () => {
-    try {
-      const tonConnectUI = new TonConnectUI({
-        manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
-      });
-
-      await tonConnectUI.disconnect();
-      setWalletAddress(null);  // Limpiar el estado de la dirección de la billetera
-      console.log("Billetera desconectada.");
-    } catch (error) {
-      console.error("Error al desconectar la billetera:", error);
     }
   };
 
@@ -58,7 +70,7 @@ export default function Home() {
       try {
         if (WebApp.initDataUnsafe.user) {
           const user = WebApp.initDataUnsafe.user as unknown as UserData;
-          const referralCode = "defaultReferralCode";  // Usa un código de referido predeterminado
+          const referralCode = "defaultReferralCode";
           setUserData(user);
 
           await saveOrUpdateUserInFirestore(user, referralCode);
@@ -72,6 +84,11 @@ export default function Home() {
 
     fetchData();
   }, []);
+
+  // Formatear la dirección de la billetera
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
 
   return (
     <main>
@@ -88,19 +105,17 @@ export default function Home() {
           <p>Puntos: {userData.points}</p>
           <p>Usuarios Invitados: {userData.invitedUsersCount}</p>
 
+          {/* Botón para invitar amigos */}
           <button onClick={inviteFriends}>Invitar a amigos</button>
 
-          {/* Mostrar siempre el botón para conectar la billetera */}
-          <button onClick={connectWallet}>
-            {walletAddress ? "Conectar otra billetera" : "Conectar Billetera"}
-          </button>
-
-          {/* Mostrar la dirección de la billetera conectada, si existe */}
-          {walletAddress && (
+          {/* Mostrar la dirección de la billetera conectada o el botón para conectar */}
+          {walletAddress ? (
             <div>
-              <p>Dirección de la billetera: {walletAddress}</p>
-              <button onClick={disconnectWallet}>Desconectar Billetera</button>
+              <p>Dirección de la billetera: {formatAddress(walletAddress)}</p>
+              <button onClick={handleWalletAction}>Desconectar Billetera</button>
             </div>
+          ) : (
+            <button onClick={handleWalletAction}>Conectar Billetera</button>
           )}
         </div>
       ) : (
