@@ -3,8 +3,7 @@
 
 import { useEffect, useState } from "react";
 import WebApp from "@twa-dev/sdk";
-import TonWeb from "tonweb";
-import TonConnectUI from "@tonconnect/ui";
+import { TonConnectUI } from "@tonconnect/ui";
 import { UserData, saveOrUpdateUserInFirestore, fetchUserData } from "@/app/components/userService";
 
 export default function Home() {
@@ -23,9 +22,10 @@ export default function Home() {
   // Función para conectarse a la billetera de Telegram
   const connectWallet = async () => {
     try {
-      const tonConnectUI = TonConnectUI;
-      const connector = new tonConnectUI.TonConnect();
-      connector.connect({ jsBridgeKey: 'your-js-bridge-key' });
+      const tonConnectUI = new TonConnectUI({
+        manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
+      });
+      await tonConnectUI.connectWallet();
       console.log("Conectado a la billetera de Telegram");
     } catch (error) {
       console.error("Error al conectar a la billetera:", error);
