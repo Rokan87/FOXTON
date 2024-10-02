@@ -3,8 +3,7 @@
 import WebApp from "@twa-dev/sdk";
 import { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
-import { v4 as uuidv4 } from "uuid"; // Para generar el código de referido único
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -23,73 +22,41 @@ const db = getFirestore(app);
 // Interfaz del userData
 interface UserData {
   id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code?: string;
-  is_premium?: boolean;
-  count?: number;
-  verified?: boolean;
-  friends?: string[];
-  referralCode?: string;
-  points?: number; // Añadir puntos
-  referrals?: number; // Añadir referidos
+  userName: string;
+  isPremium: boolean;
+  referralCode: string;
+  points: number;
+  invitedUsers: string[];
+  verifiedWallete: boolean;
+  walletAddress: string;
+  tasksDone: string[];
 }
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
 
-  // Función para guardar el usuario en Firestore
-  const saveUserToFirestore = async (user: UserData) => {
+  // Función para guardar o actualizar el usuario en Firestore
+  const saveOrUpdateUserInFirestore = async (user: UserData, referralCode: string) => {
     const userRef = doc(db, "users", user.id.toString());
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      let referralCode;
-
-      // Generar un código de referencia único
-      do {
-        referralCode = uuidv4().slice(0, 8);
-        const existingDoc = await getDoc(doc(db, "users", referralCode));
-        if (!existingDoc.exists()) break; // Si no existe, salimos del bucle
-      } while (true);
-
-      // Crear los datos adicionales
-      const userDataToSave = {
-        ...user,
-        count: 0, // Inicialmente el conteo de referidos es 0
-        verified: false, // No verificado al principio
-        friends: [], // Lista vacía de amigos
-        referralCode, // Código de referido único
-        points: 0, // Inicialmente los puntos son 0
-        referrals: 0, // Inicialmente los referidos son 0
+      // Crear un nuevo registro de usuario en Firestore con la estructura proporcionada
+      const newUser = {
+        userName: user.userName,
+        isPremium: user.isPremium || false,
+        referralCode: referralCode,
+        points: 0,
+        invitedUsers: [],
+        verifiedWallete: false,
+        walletAddress: '',
+        tasksDone: []
       };
 
-      // Guardar en Firestore
-      await setDoc(userRef, userDataToSave);
-      console.log("Usuario guardado en Firestore:", userDataToSave);
-
-      // Verificar si el usuario se registró mediante un enlace de referido
-      const urlParams = new URLSearchParams(window.location.search);
-      const referrerCode = urlParams.get('start');
-      if (referrerCode) {
-        const referrerQuery = doc(db, "users", referrerCode);
-        const referrerDoc = await getDoc(referrerQuery);
-        if (referrerDoc.exists()) {
-          const referrerData = referrerDoc.data() as UserData;
-          await updateDoc(referrerQuery, {
-            friends: arrayUnion(user.username || ""),
-            points: increment(100),
-            referrals: increment(1)
-          });
-          await updateDoc(userRef, {
-            points: increment(100)
-          });
-          console.log("Datos del referente actualizados:", referrerData);
-        }
-      }
+      await setDoc(userRef, newUser);
+      console.log("Nuevo usuario guardado en Firestore:", newUser);
     } else {
-      console.log("El usuario ya existe en Firestore");
+      console.log("El usuario ya existe en Firestore.");
     }
   };
 
@@ -106,11 +73,12 @@ export default function Home() {
     const fetchData = async () => {
       try {
         if (WebApp.initDataUnsafe.user) {
-          const user = WebApp.initDataUnsafe.user as UserData;
+          const user = WebApp.initDataUnsafe.user as unknown as UserData;
+          const referralCode = "defaultReferralCode";  // Usa un código de referido predeterminado
           setUserData(user);
 
-          // Esperar a que se guarde el usuario antes de obtener sus datos
-          await saveUserToFirestore(user);
+          // Guardar o actualizar los datos del usuario en Firestore
+          await saveOrUpdateUserInFirestore(user, referralCode);
           await fetchUserData(user.id);
         }
       } catch (error) {
@@ -121,41 +89,22 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const copyReferralLink = async () => {
-    if (userData?.referralCode) {
-      const userRef = doc(db, "users", userData.id.toString());
-      const userDoc = await getDoc(userRef);
-
-      if (userDoc.exists()) {
-        const user = userDoc.data() as UserData;
-        const appUrl = window.location.origin; // URL de la aplicación
-        const referralLink = `${appUrl}?start=${user.referralCode}`;
-        await navigator.clipboard.writeText(referralLink);
-        alert("¡Enlace de referido copiado al portapapeles!");
-      }
-    }
-  };
-
   return (
     <main>
       {userData ? (
         <div>
           <h1>
-            Welcome to GeTon
-            <p>the place where you learn to earn</p>
-            {userData.first_name}!
+            Bienvenido a GeTon, {userData.userName}!
           </h1>
           <p>
-            {userData.is_premium
-              ? "You're a premium user!"
-              : "You're not a premium user."}
+            {userData.isPremium
+              ? "¡Eres un usuario premium!"
+              : "No eres un usuario premium."}
           </p>
           <p>Puntos: {userData.points}</p>
-          <p>Referidos: {userData.referrals}</p>
-          <button onClick={copyReferralLink}>Copiar enlace de referido</button>
         </div>
       ) : (
-        <p>Cargando...</p>
+        <p>Cargando....</p>
       )}
     </main>
   );
