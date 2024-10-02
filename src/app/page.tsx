@@ -25,7 +25,7 @@ export default function Home() {
       const tonConnectUI = new TonConnectUI({
         manifestUrl: 'https://your-domain.com/manifesto.json'
       });
-      const connection = await tonConnectUI.connect();
+      const connection = await tonConnectUI.connector();
       const walletAddress = connection.account.address;
 
       // Guardar la dirección de la billetera en la base de datos
