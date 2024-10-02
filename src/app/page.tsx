@@ -34,7 +34,6 @@ interface UserData {
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [referralCount, setReferralCount] = useState<number>(0);
 
   // Función para guardar o actualizar el usuario en Firestore
   const saveOrUpdateUserInFirestore = async (user: UserData, referralCode: string) => {
@@ -42,7 +41,6 @@ export default function Home() {
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      // Crear un nuevo registro de usuario en Firestore con la estructura proporcionada
       const newUser = {
         userName: user.userName,
         isPremium: user.isPremium || false,
@@ -61,18 +59,24 @@ export default function Home() {
     }
   };
 
+  // Función para generar y compartir el enlace de referido
+  const inviteFriends = async () => {
+    if (userData?.referralCode) {
+      const referralLink = `https://t.me/mytestingsambot?start=${userData.referralCode}`;
+      const message = `Hey! Te invito a aprender sobre la blockchain y cobrar por aprender: ${referralLink}`;
+
+      // Abrir el enlace para compartir en Telegram
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async (userId: number) => {
       const userRef = doc(db, "users", userId.toString());
       const userDoc = await getDoc(userRef);
 
       if (userDoc.exists()) {
-        const userDataFromDB = userDoc.data() as UserData;
-        setUserData(userDataFromDB);
-
-        // Calcular el número de referidos (usuarios invitados)
-        const numReferrals = userDataFromDB.invitedUsers ? userDataFromDB.invitedUsers.length : 0;
-        setReferralCount(numReferrals);
+        setUserData(userDoc.data() as UserData);
       }
     };
 
@@ -83,7 +87,6 @@ export default function Home() {
           const referralCode = "defaultReferralCode";  // Usa un código de referido predeterminado
           setUserData(user);
 
-          // Guardar o actualizar los datos del usuario en Firestore
           await saveOrUpdateUserInFirestore(user, referralCode);
           await fetchUserData(user.id);
         }
@@ -108,7 +111,9 @@ export default function Home() {
               : "No eres un usuario premium."}
           </p>
           <p>Puntos: {userData.points}</p>
-          <p>Referidos: {referralCount}</p> {/* Mostrar número de referidos */}
+
+          {/* Botón para invitar a amigos */}
+          <button onClick={inviteFriends}>Invitar a amigos</button>
         </div>
       ) : (
         <p>Cargando....</p>
