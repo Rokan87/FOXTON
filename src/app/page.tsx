@@ -23,10 +23,19 @@ export default function Home() {
   const connectWallet = async () => {
     try {
       const tonConnectUI = new TonConnectUI({
-        manifestUrl: 'https://raw.githubusercontent.com/Rokan87/mitest/refs/heads/main/manifest.json'
+        manifestUrl: 'https://your-domain.com/manifesto.json'
       });
-      await tonConnectUI.connectWallet();
-      console.log("Conectado a la billetera de Telegram");
+      const connection = await tonConnectUI.connect();
+      const walletAddress = connection.account.address;
+
+      // Guardar la dirección de la billetera en la base de datos
+      if (userData) {
+        const updatedUserData = { ...userData, walletAddress };
+        await saveOrUpdateUserInFirestore(updatedUserData, userData.referralCode);
+        setUserData(updatedUserData);
+      }
+
+      console.log("Conectado a la billetera de Telegram:", walletAddress);
     } catch (error) {
       console.error("Error al conectar a la billetera:", error);
     }
@@ -68,7 +77,11 @@ export default function Home() {
           <p>Usuarios Invitados: {userData.invitedUsersCount}</p>
 
           <button onClick={inviteFriends}>Invitar a amigos</button>
-          <button onClick={connectWallet}>Conectar Billetera</button>
+          {userData.walletAddress ? (
+            <p>Dirección de la billetera: {userData.walletAddress}</p>
+          ) : (
+            <button onClick={connectWallet}>Conectar Billetera</button>
+          )}
         </div>
       ) : (
         <p>Cargando....</p>
