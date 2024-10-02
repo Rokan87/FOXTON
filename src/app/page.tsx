@@ -32,7 +32,10 @@ export default function Home() {
       if (userData) {
         const updatedUserData = { ...userData, walletAddress };
         await saveOrUpdateUserInFirestore(updatedUserData, userData.referralCode);
-        setUserData(updatedUserData);  // Actualiza el estado local con la nueva dirección de la billetera
+
+        // Vuelve a obtener los datos actualizados de Firestore
+        const userDataFromFirestore = await fetchUserData(userData.id);
+        setUserData(userDataFromFirestore);  // Actualiza el estado local con los datos desde Firestore
       }
 
       console.log("Conectado a la billetera de Telegram:", walletAddress);
@@ -46,6 +49,7 @@ export default function Home() {
       try {
         if (WebApp.initDataUnsafe.user) {
           const user = WebApp.initDataUnsafe.user as unknown as UserData;
+          console.log("User data from Telegram:", user);
           const referralCode = "defaultReferralCode";  // Usa un código de referido predeterminado
           setUserData(user);
 
