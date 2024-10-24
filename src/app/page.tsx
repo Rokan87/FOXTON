@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import WebApp from "@twa-dev/sdk";
 import { UserData, saveOrUpdateUserInFirestore, fetchUserData } from "@/app/components/userService";
-import Wallet from '@/app/components/Wallet';
+import Wallet from '../app/components/wallet';
 
 export default function Home() {
   const [userData, setUserData] = useState<UserData | null>(null);
